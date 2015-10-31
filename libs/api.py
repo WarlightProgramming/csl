@@ -99,7 +99,7 @@ def createGame(email, token, **settings):
     data['hostAPIToken'] = str(token)
     data['templateID'] = settings.get('template')
     data['gameName'] = settings.get('gameName')
-    data['personalMessage'] = settings.get('message')
+    data['personalMessage'] = settings.get('message', "")
     teams = settings.get('teams')
     data['players'] = makePlayers(teams)
     if 'overriddenBonuses' in settings:
