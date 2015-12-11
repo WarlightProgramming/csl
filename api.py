@@ -8,24 +8,50 @@ class APIError(Exception):
     """
     pass
 
+class ServerGameKeyNotFound(Exception):
+    """
+    Error clas for nonexistent games
+    """
+
 def getNextID(ID):
     """
     Given an ID, returns the next ID
     """
-    if ID[-1] == "Z":
-        newID = "A" * (len(ID) + 1)
-    else:
-        newID = chr(ord(ID) + 1)
+    lastChar = ID[-1]
+    mainID = ID[:(len(ID) - 1)]
+    if (lastChar == "Z"): newEnd = "AA"
+    else: newEnd = chr(ord(lastChar) + 1)
+    return (mainID + newEnd)
 
-def makePlayers(teams):
+def canBeTeamless(teams, allowTeamless=True):
+    """
+    Helper function to determine whether a game can be teamless
+    """
+    return ((allowTeamless is True) and ([team for team in teams 
+            if (isinstance(team, tuple))] == list()))
+
+def makePlayers(teams, allowTeamless=False):
     """
     Given teams, returns a list
     containing player dictionaries
+
+    PARAMETERS:
+    teams: list of teams as tuples of player IDs
+
+    OPTIONAL:
+    teamless: bool (default False); if set to True,
+              a teamless result will be returned if possible
     """
+    teamless = canBeTeamless(teams, allowTeamless)
     teamID = 0
     players = list()
     for team in teams:
-        if (type(team) == list) or (type(team) == tuple):
+        if (teamless):
+            player = dict()
+            player['token'] = str(team)
+            player['team'] = str(None)
+            players.append(player)
+        elif (type(team) == list) or (type(team) == tuple):
             for member in team:
                 player = dict()
                 player['token'] = str(member)
@@ -84,6 +110,8 @@ def queryGame(email, token, gameID, getHistory=False):
     r = requests.post(url=site, params=data)
     jsonOutput = r.json()
     if 'error' in jsonOutput:
+        if ("ServerGameKeyNotFound" in jsonOutput['error']):
+            raise ServerGameKeyNotFound(jsonOutput['error'])
         raise APIError(jsonOutput['error'])
     return jsonOutput
 
